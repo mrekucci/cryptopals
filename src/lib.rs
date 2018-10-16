@@ -6,4 +6,7 @@
 //!
 //! [crypto]: http://cryptopals.com/
 
+#[macro_use]
+extern crate lazy_static;
+
 pub mod set1;

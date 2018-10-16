@@ -7,3 +7,4 @@ authors = ["Peter Mrekaj <mrekucci@gmail.com>"]
 
 hex = "0.3.2"
 base64 = "0.9.3"
+lazy_static = "1.1.0"
