@@ -10,7 +10,7 @@ extern crate base64;
 extern crate hex;
 
 use std::collections::HashMap;
-use std::error::Error;
+use Result;
 
 lazy_static! {
     // The English ASCII character frequencies derived from: http://www.gutenberg.org/ebooks/2701.
@@ -107,7 +107,7 @@ lazy_static! {
 /// This function is designed to help resolve the [Challenge 1].
 ///
 /// [Challenge 1]: http://cryptopals.com/sets/1/challenges/1
-pub fn hex_to_base64<T: AsRef<[u8]>>(data: T) -> Result<String, hex::FromHexError> {
+pub fn hex_to_base64<T: AsRef<[u8]>>(data: T) -> Result<String> {
     Ok(base64::encode(&hex::decode(data)?))
 }
 
@@ -116,7 +116,7 @@ pub fn hex_to_base64<T: AsRef<[u8]>>(data: T) -> Result<String, hex::FromHexErro
 /// This function is designed to help resolve the [Challenge 2].
 ///
 /// [Challenge 2]: http://cryptopals.com/sets/1/challenges/2
-pub fn fixed_xor<T: AsRef<[u8]>>(a: T, b: T) -> Result<Vec<u8>, hex::FromHexError> {
+pub fn fixed_xor<T: AsRef<[u8]>>(a: T, b: T) -> Result<Vec<u8>> {
     let a = hex::decode(a)?;
     let b = hex::decode(b)?;
 
@@ -130,7 +130,7 @@ pub fn fixed_xor<T: AsRef<[u8]>>(a: T, b: T) -> Result<Vec<u8>, hex::FromHexErro
 /// This function is designed to help resolve the [Challenge 3].
 ///
 /// [Challenge 3]: http://cryptopals.com/sets/1/challenges/3
-pub fn single_byte_xor_cipher<T: AsRef<[u8]>>(data: T) -> Result<String, Box<Error>> { // TODO: consider passing CHARACTER_FREQUENCIES as argument and return the single character.
+pub fn single_byte_xor_cipher<T: AsRef<[u8]>>(data: T) -> Result<String> { // TODO: consider passing CHARACTER_FREQUENCIES as argument and return the single character.
     let data = hex::decode(data)?;
 
     let mut key = 0;
@@ -157,8 +157,10 @@ mod test {
     #[test]
     fn test_challenge1_solution() {
         assert_eq!(
-            hex_to_base64("49276d206b696c6c696e6720796f757220627261696e206c696b65206120706f69736f6e6f7573206d757368726f6f6d"),
-            Ok("SSdtIGtpbGxpbmcgeW91ciBicmFpbiBsaWtlIGEgcG9pc29ub3VzIG11c2hyb29t".to_string()),
+            hex_to_base64(
+                "49276d206b696c6c696e6720796f757220627261696e206c696b65206120706f69736f6e6f7573206d757368726f6f6d"
+            ).unwrap(),
+            "SSdtIGtpbGxpbmcgeW91ciBicmFpbiBsaWtlIGEgcG9pc29ub3VzIG11c2hyb29t".to_string(),
         );
     }
 
@@ -168,8 +170,8 @@ mod test {
             fixed_xor(
                 "1c0111001f010100061a024b53535009181c",
                 "686974207468652062756c6c277320657965",
-            ),
-            Vec::from_hex("746865206b696420646f6e277420706c6179"),
+            ).unwrap(),
+            Vec::from_hex("746865206b696420646f6e277420706c6179").unwrap(),
         )
     }
 
