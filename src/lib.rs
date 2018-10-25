@@ -7,8 +7,6 @@
 //! [crypto]: http://cryptopals.com/
 
 extern crate hex;
-#[macro_use]
-extern crate lazy_static;
 
 use std::error;
 use std::fmt;
