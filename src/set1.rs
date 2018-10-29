@@ -249,7 +249,7 @@ mod test {
             hex_to_base64(
                 "49276d206b696c6c696e6720796f757220627261696e206c696b65206120706f69736f6e6f7573206d757368726f6f6d"
             ).unwrap(),
-            "SSdtIGtpbGxpbmcgeW91ciBicmFpbiBsaWtlIGEgcG9pc29ub3VzIG11c2hyb29t".to_string(),
+            String::from("SSdtIGtpbGxpbmcgeW91ciBicmFpbiBsaWtlIGEgcG9pc29ub3VzIG11c2hyb29t"),
         );
     }
 
@@ -270,7 +270,7 @@ mod test {
             single_byte_xor_cipher(
                 "1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736"
             ).unwrap(),
-            "Cooking MC's like a pound of bacon".to_string(),
+            String::from("Cooking MC's like a pound of bacon"),
         )
     }
 
@@ -278,7 +278,7 @@ mod test {
     fn test_challenge4_solution() {
         assert_eq!(
             detect_single_character_xor(include_str!("data/set1_challenge4.txt")).unwrap(),
-            "Now that the party is jumping\n".to_string(),
+            String::from("Now that the party is jumping\n"),
         )
     }
 
