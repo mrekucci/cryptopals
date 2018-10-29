@@ -220,10 +220,27 @@ pub fn detect_single_character_xor<T: AsRef<[u8]>>(data: T) -> Result<String> {
     Ok(res)
 }
 
+/// Encrypts the `data` with the given `key`using XOR and returns the result.
+///
+/// This function is designed to help resolve the [Challenge 5].
+///
+/// [Challenge 5]: http://cryptopals.com/sets/1/challenges/5
+pub fn encrypt_by_repeating_xor<T: AsRef<[u8]>>(key: T, data: T) -> Result<String> {
+    let bytes: Vec<u8> = data
+        .as_ref()
+        .iter()
+        .zip(key.as_ref().iter().cycle())
+        .map(|(x, y)| x ^ y)
+        .collect();
+
+    Ok(hex::encode(bytes))
+}
+
 #[cfg(test)]
 mod test {
     use super::{
-        detect_single_character_xor, fixed_xor, hex::FromHex, hex_to_base64, single_byte_xor_cipher,
+        detect_single_character_xor, encrypt_by_repeating_xor, fixed_xor, hex::FromHex,
+        hex_to_base64, single_byte_xor_cipher,
     };
 
     #[test]
@@ -241,7 +258,7 @@ mod test {
         assert_eq!(
             fixed_xor(
                 "1c0111001f010100061a024b53535009181c",
-                "686974207468652062756c6c277320657965"
+                "686974207468652062756c6c277320657965",
             ).unwrap(),
             Vec::from_hex("746865206b696420646f6e277420706c6179").unwrap(),
         )
@@ -262,6 +279,20 @@ mod test {
         assert_eq!(
             detect_single_character_xor(include_str!("data/set1_challenge4.txt")).unwrap(),
             "Now that the party is jumping\n".to_string(),
+        )
+    }
+
+    #[test]
+    fn test_challenge5_solution() {
+        assert_eq!(
+            encrypt_by_repeating_xor(
+                "ICE",
+                "Burning 'em, if you ain't quick and nimble\nI go crazy when I hear a cymbal",
+            ).unwrap(),
+            String::from(
+                "0b3637272a2b2e63622c2e69692a23693a2a3c6324202d623d63343c2a26226324272765272\
+                 a282b2f20430a652e2c652a3124333a653e2b2027630c692b20283165286326302e27282f"
+            ),
         )
     }
 }
