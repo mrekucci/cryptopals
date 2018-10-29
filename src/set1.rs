@@ -165,13 +165,13 @@ pub fn hex_to_base64<T: AsRef<[u8]>>(data: T) -> Result<String> {
 /// This function is designed to help resolve the [Challenge 2].
 ///
 /// [Challenge 2]: http://cryptopals.com/sets/1/challenges/2
-pub fn fixed_xor<T: AsRef<[u8]>>(a: T, b: T) -> Result<Vec<u8>> {
+pub fn fixed_xor<T: AsRef<[u8]>>(a: T, b: T) -> Result<String> {
     let a = hex::decode(a)?;
     let b = hex::decode(b)?;
 
-    // TODO: check if the buffers are equal-length and throw error if not.
+    let xor: Vec<_> = a.iter().zip(b).map(|(x, y)| x ^ y).collect();
 
-    Ok(a.iter().zip(b).map(|(x, y)| x ^ y).collect())
+    Ok(hex::encode(xor))
 }
 
 /// Finds the key, a single character which XOR'd every byte of the `data`, and return decrypted
@@ -183,18 +183,18 @@ pub fn fixed_xor<T: AsRef<[u8]>>(a: T, b: T) -> Result<Vec<u8>> {
 pub fn single_byte_xor_cipher<T: AsRef<[u8]>>(data: T) -> Result<String> {
     let data = hex::decode(data)?;
 
-    let mut key = 0;
     let mut max = 0.0;
-    for ch in 0..128 {
-        let xored: Vec<_> = data.iter().map(|x| x ^ ch).collect();
-        let score = score_english(xored);
+    let mut msg = Vec::new();
+    for key in 0..128 {
+        let secret: Vec<_> = data.iter().map(|x| x ^ key).collect();
+        let score = score_english(&secret);
         if max < score {
-            key = ch;
             max = score;
+            msg = secret;
         }
     }
 
-    Ok(String::from_utf8(data.iter().map(|x| x ^ key).collect())?)
+    Ok(String::from_utf8(msg)?)
 }
 
 /// Finds and returns the line inside the `data` that has been encrypted by single-character XOR.
@@ -204,20 +204,20 @@ pub fn single_byte_xor_cipher<T: AsRef<[u8]>>(data: T) -> Result<String> {
 /// [Challenge 4]: http://cryptopals.com/sets/1/challenges/4
 pub fn detect_single_character_xor<T: AsRef<[u8]>>(data: T) -> Result<String> {
     let mut max = 0.0;
-    let mut res = String::new();
+    let mut msg = String::new();
 
     for line in data.as_ref().split(|ch| *ch == b'\n') {
         if hex::decode(line)?.is_ascii() {
-            let line = single_byte_xor_cipher(line)?; // TODO: consider refactoring to also return the score from single_byte_xor_cipher.
-            let score = score_english(&line);
+            let secret = single_byte_xor_cipher(line)?; // TODO: consider refactoring to also return the score from single_byte_xor_cipher.
+            let score = score_english(&secret);
             if max < score {
-                res = line;
                 max = score;
+                msg = secret;
             }
         }
     }
 
-    Ok(res)
+    Ok(msg)
 }
 
 /// Encrypts the `data` with the given `key`using XOR and returns the result.
@@ -226,21 +226,21 @@ pub fn detect_single_character_xor<T: AsRef<[u8]>>(data: T) -> Result<String> {
 ///
 /// [Challenge 5]: http://cryptopals.com/sets/1/challenges/5
 pub fn encrypt_by_repeating_xor<T: AsRef<[u8]>>(key: T, data: T) -> Result<String> {
-    let bytes: Vec<u8> = data
+    let secret: Vec<_> = data
         .as_ref()
         .iter()
         .zip(key.as_ref().iter().cycle())
         .map(|(x, y)| x ^ y)
         .collect();
 
-    Ok(hex::encode(bytes))
+    Ok(hex::encode(secret))
 }
 
 #[cfg(test)]
 mod test {
     use super::{
-        detect_single_character_xor, encrypt_by_repeating_xor, fixed_xor, hex::FromHex,
-        hex_to_base64, single_byte_xor_cipher,
+        detect_single_character_xor, encrypt_by_repeating_xor, fixed_xor, hex_to_base64,
+        single_byte_xor_cipher,
     };
 
     #[test]
@@ -260,7 +260,7 @@ mod test {
                 "1c0111001f010100061a024b53535009181c",
                 "686974207468652062756c6c277320657965",
             ).unwrap(),
-            Vec::from_hex("746865206b696420646f6e277420706c6179").unwrap(),
+            String::from("746865206b696420646f6e277420706c6179"),
         )
     }
 
