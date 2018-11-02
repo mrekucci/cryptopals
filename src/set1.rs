@@ -166,7 +166,7 @@ fn hamming_distance<T: AsRef<[u8]>>(a: T, b: T) -> u32 {
 
 /// Converts hexadecimal data to base64.
 ///
-/// This function is designed to help resolve the [Challenge 1].
+/// This function is designed to help solve the [Challenge 1].
 ///
 /// [Challenge 1]: http://cryptopals.com/sets/1/challenges/1
 pub fn hex_to_base64<T: AsRef<[u8]>>(data: T) -> Result<String> {
@@ -175,7 +175,7 @@ pub fn hex_to_base64<T: AsRef<[u8]>>(data: T) -> Result<String> {
 
 /// Produces XOR product of equal-length `a` and `b` buffers.
 ///
-/// This function is designed to help resolve the [Challenge 2].
+/// This function is designed to help solve the [Challenge 2].
 ///
 /// [Challenge 2]: http://cryptopals.com/sets/1/challenges/2
 pub fn fixed_xor<T: AsRef<[u8]>>(a: T, b: T) -> Result<String> {
@@ -191,7 +191,7 @@ pub fn fixed_xor<T: AsRef<[u8]>>(a: T, b: T) -> Result<String> {
 /// data for English characters and returns a tuple containing: key, score, and decrypted `data`.
 /// If the `data` are encoded in hex, then they will be automatically decoded.
 ///
-/// This function is designed to help resolve the [Challenge 3].
+/// This function is designed to help solve the [Challenge 3].
 ///
 /// [Challenge 3]: http://cryptopals.com/sets/1/challenges/3
 pub fn single_byte_xor_cipher<T: AsRef<[u8]>>(data: T) -> Result<(u8, f64, String)> {
@@ -217,7 +217,7 @@ pub fn single_byte_xor_cipher<T: AsRef<[u8]>>(data: T) -> Result<(u8, f64, Strin
 /// Finds and returns the decrypted line inside the `data`
 /// that has been encrypted by single-character XOR.
 ///
-/// This function is designed to help resolve the [Challenge 4].
+/// This function is designed to help solve the [Challenge 4].
 ///
 /// [Challenge 4]: http://cryptopals.com/sets/1/challenges/4
 pub fn detect_single_character_xor<T: AsRef<[u8]>>(data: T) -> Result<String> {
@@ -239,7 +239,7 @@ pub fn detect_single_character_xor<T: AsRef<[u8]>>(data: T) -> Result<String> {
 
 /// Encrypts the `data` with the given `key`using XOR and returns the result.
 ///
-/// This function is designed to help resolve the [Challenge 5].
+/// This function is designed to help solve the [Challenge 5].
 ///
 /// [Challenge 5]: http://cryptopals.com/sets/1/challenges/5
 pub fn repeating_xor_encrypt<T: AsRef<[u8]>>(key: T, data: T) -> Result<String> {
@@ -255,7 +255,7 @@ pub fn repeating_xor_encrypt<T: AsRef<[u8]>>(key: T, data: T) -> Result<String> 
 
 /// Tries to break repeating-key XOR cipher.
 ///
-/// This function is designed to help resolve the [Challenge 6].
+/// This function is designed to help solve the [Challenge 6].
 ///
 /// [Challenge 6]: http://cryptopals.com/sets/1/challenges/6
 pub fn break_repeating_xor<T: AsRef<[u8]>>(data: T) -> Result<String> {
