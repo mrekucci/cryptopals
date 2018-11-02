@@ -21,6 +21,7 @@ pub type Result<T> = result::Result<T, Error>;
 pub enum Error {
     FromHex(hex::FromHexError),
     FromUtf8(string::FromUtf8Error),
+    FromBase64(base64::DecodeError),
 }
 
 impl fmt::Display for Error {
@@ -28,6 +29,7 @@ impl fmt::Display for Error {
         match *self {
             Error::FromHex(ref err) => err.fmt(f),
             Error::FromUtf8(ref err) => err.fmt(f),
+            Error::FromBase64(ref err) => err.fmt(f),
         }
     }
 }
@@ -37,6 +39,7 @@ impl error::Error for Error {
         match *self {
             Error::FromHex(ref err) => err.description(),
             Error::FromUtf8(ref err) => err.description(),
+            Error::FromBase64(ref err) => err.description(),
         }
     }
 }
@@ -50,6 +53,12 @@ impl From<hex::FromHexError> for Error {
 impl From<string::FromUtf8Error> for Error {
     fn from(err: string::FromUtf8Error) -> Self {
         Error::FromUtf8(err)
+    }
+}
+
+impl From<base64::DecodeError> for Error {
+    fn from(err: base64::DecodeError) -> Self {
+        Error::FromBase64(err)
     }
 }
 

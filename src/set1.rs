@@ -13,50 +13,50 @@ use Result;
 
 // The English ASCII character frequencies derived from: http://www.gutenberg.org/ebooks/2701.
 static ASCII_CHARACTER_FREQUENCY_MAP: [f64; 128] = [
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0,
+    0.,
+    0.,
+    0.,
+    0.,
+    0.,
+    0.,
+    0.,
+    0.,
+    0.,
+    0.,
     0.01771649014697238, // b'\n'
-    0.0,
-    0.0,
+    0.,
+    0.,
     0.01771649014697238, // b'\r'
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0,
+    0.,
+    0.,
+    0.,
+    0.,
+    0.,
+    0.,
+    0.,
+    0.,
+    0.,
+    0.,
+    0.,
+    0.,
+    0.,
+    0.,
+    0.,
+    0.,
+    0.,
+    0.,
     0.15680041758654964,   // b' '
     0.0014025323324160285, // b'!'
-    0.0,
+    0.,
     0.0000007932875183348578, // b'#'
     0.000003173150073339431,  // b'$'
     0.0000007932875183348578, // b'%'
     0.0000015865750366697155, // b'&'
-    0.0,
+    0.,
     0.00018721585432702643, // b'('
     0.00018721585432702643, // b')'
     0.00008170861438849034, // b'*'
-    0.0,
+    0.,
     0.015379465117957888,    // b','
     0.0021045917861423776,   // b'-'
     0.006495438200125815,    // b'.'
@@ -73,9 +73,9 @@ static ASCII_CHARACTER_FREQUENCY_MAP: [f64; 128] = [
     0.00005315026372843547,  // b'9'
     0.00017690311658867327,  // b':'
     0.00331832168919471,     // b';'
-    0.0,
-    0.0,
-    0.0,
+    0.,
+    0.,
+    0.,
     0.0007988405309632018,    // b'?'
     0.0000015865750366697155, // b'@'
     0.0019030967564853238,    // b'A'
@@ -105,11 +105,11 @@ static ASCII_CHARACTER_FREQUENCY_MAP: [f64; 128] = [
     0.00020704804228539788,   // b'Y'
     0.000015072462848362297,  // b'Z'
     0.0000023798625550045732, // b'['
-    0.0,
+    0.,
     0.0000023798625550045732, // b']'
-    0.0,
+    0.,
     0.0006155911142278496, // b'_'
-    0.0,
+    0.,
     0.0609522464712588,    // b'a'
     0.012553774977649125,  // b'b'
     0.017557832643305408,  // b'c'
@@ -136,20 +136,33 @@ static ASCII_CHARACTER_FREQUENCY_MAP: [f64; 128] = [
     0.0008313653192149309, // b'x'
     0.013461295898624201,  // b'y'
     0.000491044973849277,  // b'z'
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0,
+    0.,
+    0.,
+    0.,
+    0.,
+    0.,
 ];
 
 /// Returns english score for `data` base on character frequency metric.
 fn score_english<T: AsRef<[u8]>>(data: T) -> f64 {
     data.as_ref()
         .iter()
-        .map(|x| ASCII_CHARACTER_FREQUENCY_MAP[*x as usize])
+        .map(|&x| ASCII_CHARACTER_FREQUENCY_MAP[x as usize])
         .sum()
 }
+
+/// Returns the number of differing bits between `a` and `b`.
+/// If the length of `a` and `b` are not equal, then the
+/// distance is computed from the length of the shortest one.
+fn hamming_distance<T: AsRef<[u8]>>(a: T, b: T) -> u32 {
+    a.as_ref()
+        .iter()
+        .zip(b.as_ref())
+        .fold(0, |acc, (x, y)| acc + (x ^ y).count_ones())
+}
+
+// TODO: Consider working with raw binary inputs &[u8] (not hex) and returning raw outputs Vec<u8> (not String) and moving more logic to tests!
+// TODO: The cryptopals says: Always operate on raw bytes, never on encoded strings. Only use hex and base64 for pretty-printing!
 
 /// Converts hexadecimal data to base64.
 ///
@@ -174,50 +187,54 @@ pub fn fixed_xor<T: AsRef<[u8]>>(a: T, b: T) -> Result<String> {
     Ok(hex::encode(xor))
 }
 
-/// Finds the key, a single character which XOR'd every byte of the `data`, and return decrypted
-/// `data`.
+/// Finds the key (a single character which XOR'd every byte of the `data`) by scoring the XOR'd
+/// data for English characters and returns a tuple containing: key, score, and decrypted `data`.
+/// If the `data` are encoded in hex, then they will be automatically decoded.
 ///
 /// This function is designed to help resolve the [Challenge 3].
 ///
 /// [Challenge 3]: http://cryptopals.com/sets/1/challenges/3
-pub fn single_byte_xor_cipher<T: AsRef<[u8]>>(data: T) -> Result<String> {
-    let data = hex::decode(data)?;
+pub fn single_byte_xor_cipher<T: AsRef<[u8]>>(data: T) -> Result<(u8, f64, String)> {
+    let data = if data.as_ref().iter().all(u8::is_ascii_hexdigit) {
+        hex::decode(data)?
+    } else {
+        data.as_ref().to_vec()
+    };
 
-    let mut max = 0.0;
-    let mut msg = Vec::new();
-    for key in 0..128 {
-        let secret: Vec<_> = data.iter().map(|x| x ^ key).collect();
-        let score = score_english(&secret);
-        if max < score {
-            max = score;
-            msg = secret;
+    let (key, score, text) = (0..128).fold((0, 0., Vec::new()), |max, key| {
+        let text = data.iter().map(|x| x ^ key).collect();
+        let score = score_english(&text);
+        if max.1 < score {
+            (key, score, text)
+        } else {
+            max
         }
-    }
+    });
 
-    Ok(String::from_utf8(msg)?)
+    Ok((key, score, String::from_utf8(text)?))
 }
 
-/// Finds and returns the line inside the `data` that has been encrypted by single-character XOR.
+/// Finds and returns the decrypted line inside the `data`
+/// that has been encrypted by single-character XOR.
 ///
 /// This function is designed to help resolve the [Challenge 4].
 ///
 /// [Challenge 4]: http://cryptopals.com/sets/1/challenges/4
 pub fn detect_single_character_xor<T: AsRef<[u8]>>(data: T) -> Result<String> {
-    let mut max = 0.0;
-    let mut msg = String::new();
+    let mut max_score = 0.;
+    let mut secret_text = String::new();
 
-    for line in data.as_ref().split(|ch| *ch == b'\n') {
+    for line in data.as_ref().split(|&ch| ch == b'\n') {
         if hex::decode(line)?.is_ascii() {
-            let secret = single_byte_xor_cipher(line)?; // TODO: consider refactoring to also return the score from single_byte_xor_cipher.
-            let score = score_english(&secret);
-            if max < score {
-                max = score;
-                msg = secret;
+            let (_, score, text) = single_byte_xor_cipher(line)?;
+            if max_score < score {
+                max_score = score;
+                secret_text = text;
             }
         }
     }
 
-    Ok(msg)
+    Ok(secret_text)
 }
 
 /// Encrypts the `data` with the given `key`using XOR and returns the result.
@@ -225,22 +242,85 @@ pub fn detect_single_character_xor<T: AsRef<[u8]>>(data: T) -> Result<String> {
 /// This function is designed to help resolve the [Challenge 5].
 ///
 /// [Challenge 5]: http://cryptopals.com/sets/1/challenges/5
-pub fn encrypt_by_repeating_xor<T: AsRef<[u8]>>(key: T, data: T) -> Result<String> {
-    let secret: Vec<_> = data
+pub fn repeating_xor_encrypt<T: AsRef<[u8]>>(key: T, data: T) -> Result<String> {
+    let encrypted_data: Vec<_> = data
         .as_ref()
         .iter()
         .zip(key.as_ref().iter().cycle())
         .map(|(x, y)| x ^ y)
         .collect();
 
-    Ok(hex::encode(secret))
+    Ok(hex::encode(encrypted_data))
+}
+
+/// Tries to break repeating-key XOR cipher.
+///
+/// This function is designed to help resolve the [Challenge 6].
+///
+/// [Challenge 6]: http://cryptopals.com/sets/1/challenges/6
+pub fn break_repeating_xor<T: AsRef<[u8]>>(data: T) -> Result<String> {
+    let data: Vec<_> = data
+        .as_ref()
+        .iter()
+        .cloned()
+        .filter(|&x| x != b'\n')
+        .collect();
+    let data = base64::decode(&data)?;
+
+    // Guess the key size.
+    let key_size = (2..40)
+        .map(|i| {
+            let i = i << 2;
+            let a = &data.get(..i).unwrap_or_default();
+            let b = &data.get(i..2 * i).unwrap_or_default();
+            let d = hamming_distance(a, b) as f64 / i as f64;
+            (i >> 2, d)
+        }).fold(
+            (0, std::f64::INFINITY),
+            |min, x| if min.1 < x.1 { min } else { x },
+        ).0;
+
+    // Rebuilt the key.
+    let mut key = Vec::with_capacity(key_size);
+    for i in 0..key.capacity() {
+        let column: Vec<_> = data
+            .chunks(key_size)
+            .filter_map(|x| x.get(i).cloned())
+            .collect();
+        let letter = single_byte_xor_cipher(column)?.0;
+        key.push(letter);
+    }
+
+    // The code above can also by rewritten without the
+    // loop, but we would be force to discard errors:
+    //
+    // ```rust
+    // let key: Vec<_> = (0..key_size)
+    //     .filter_map(|i| {
+    //         let column: Vec<_> = data
+    //             .chunks(key_size)
+    //             .filter_map(|x| x.get(i).cloned())
+    //             .collect();
+    //         single_byte_xor_cipher(column).ok() // We discard errors here!
+    //     }).map(|r| r.0)
+    //     .collect();
+    // ```
+
+    // Decrypt the text.
+    let secret_text = data
+        .iter()
+        .zip(key.iter().cycle())
+        .map(|(x, y)| x ^ y)
+        .collect();
+
+    Ok(String::from_utf8(secret_text)?)
 }
 
 #[cfg(test)]
 mod test {
     use super::{
-        detect_single_character_xor, encrypt_by_repeating_xor, fixed_xor, hex_to_base64,
-        single_byte_xor_cipher,
+        break_repeating_xor, detect_single_character_xor, fixed_xor, hex_to_base64,
+        repeating_xor_encrypt, single_byte_xor_cipher,
     };
 
     #[test]
@@ -269,7 +349,8 @@ mod test {
         assert_eq!(
             single_byte_xor_cipher(
                 "1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736"
-            ).unwrap(),
+            ).unwrap()
+            .2,
             String::from("Cooking MC's like a pound of bacon"),
         )
     }
@@ -277,7 +358,7 @@ mod test {
     #[test]
     fn test_challenge4_solution() {
         assert_eq!(
-            detect_single_character_xor(include_str!("data/set1_challenge4.txt")).unwrap(),
+            detect_single_character_xor(include_str!("data/set1_challenge4_input.txt")).unwrap(),
             String::from("Now that the party is jumping\n"),
         )
     }
@@ -285,7 +366,7 @@ mod test {
     #[test]
     fn test_challenge5_solution() {
         assert_eq!(
-            encrypt_by_repeating_xor(
+            repeating_xor_encrypt(
                 "ICE",
                 "Burning 'em, if you ain't quick and nimble\nI go crazy when I hear a cymbal",
             ).unwrap(),
@@ -293,6 +374,14 @@ mod test {
                 "0b3637272a2b2e63622c2e69692a23693a2a3c6324202d623d63343c2a26226324272765272\
                  a282b2f20430a652e2c652a3124333a653e2b2027630c692b20283165286326302e27282f"
             ),
+        )
+    }
+
+    #[test]
+    fn test_challenge6_solution() {
+        assert_eq!(
+            break_repeating_xor(include_str!("data/set1_challenge6_input.txt")).unwrap(),
+            include_str!("data/set1_challenge6_expected_output.txt"),
         )
     }
 }
