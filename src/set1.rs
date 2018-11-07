@@ -161,9 +161,6 @@ fn hamming_distance<T: AsRef<[u8]>>(a: T, b: T) -> u32 {
         .fold(0, |acc, (x, y)| acc + (x ^ y).count_ones())
 }
 
-// TODO: Consider working with raw binary inputs &[u8] (not hex) and returning raw outputs Vec<u8> (not String) and moving more logic to tests!
-// TODO: The cryptopals says: Always operate on raw bytes, never on encoded strings. Only use hex and base64 for pretty-printing!
-
 /// Converts hexadecimal data to base64.
 ///
 /// This function is designed to help solve the [Challenge 1].
@@ -325,63 +322,73 @@ mod test {
 
     #[test]
     fn test_challenge1_solution() {
-        assert_eq!(
-            hex_to_base64(
-                "49276d206b696c6c696e6720796f757220627261696e206c696b65206120706f69736f6e6f7573206d757368726f6f6d"
-            ).unwrap(),
-            String::from("SSdtIGtpbGxpbmcgeW91ciBicmFpbiBsaWtlIGEgcG9pc29ub3VzIG11c2hyb29t"),
+        let input = "49276d206b696c6c696e6720796f757220627261696e206c696b65206120706f69736f6e6f7573206d757368726f6f6d";
+
+        let original = hex_to_base64(input).unwrap();
+        let expected = String::from(
+            "SSdtIGtpbGxpbmcgeW91ciBicmFpbiBs\
+             aWtlIGEgcG9pc29ub3VzIG11c2hyb29t",
         );
+
+        assert_eq!(original, expected);
     }
 
     #[test]
     fn test_challenge2_solution() {
-        assert_eq!(
-            fixed_xor(
-                "1c0111001f010100061a024b53535009181c",
-                "686974207468652062756c6c277320657965",
-            ).unwrap(),
-            String::from("746865206b696420646f6e277420706c6179"),
-        )
+        let input = (
+            "1c0111001f010100061a024b53535009181c",
+            "686974207468652062756c6c277320657965",
+        );
+
+        let original = fixed_xor(input.0, input.1).unwrap();
+        let expected = String::from("746865206b696420646f6e277420706c6179");
+
+        assert_eq!(original, expected);
     }
 
     #[test]
     fn test_challenge3_solution() {
-        assert_eq!(
-            single_byte_xor_cipher(
-                "1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736"
-            ).unwrap()
-            .2,
-            String::from("Cooking MC's like a pound of bacon"),
-        )
+        let input = "1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736";
+
+        let original = single_byte_xor_cipher(input).unwrap().2;
+        let expected = String::from("Cooking MC's like a pound of bacon");
+
+        assert_eq!(original, expected);
     }
 
     #[test]
     fn test_challenge4_solution() {
-        assert_eq!(
-            detect_single_character_xor(include_str!("data/set1_challenge4_input.txt")).unwrap(),
-            String::from("Now that the party is jumping\n"),
-        )
+        let input = include_str!("data/set1/challenge/4/input.txt");
+
+        let original = detect_single_character_xor(&input).unwrap();
+        let expected = String::from("Now that the party is jumping\n");
+
+        assert_eq!(original, expected);
     }
 
     #[test]
     fn test_challenge5_solution() {
-        assert_eq!(
-            repeating_xor_encrypt(
-                "ICE",
-                "Burning 'em, if you ain't quick and nimble\nI go crazy when I hear a cymbal",
-            ).unwrap(),
-            String::from(
-                "0b3637272a2b2e63622c2e69692a23693a2a3c6324202d623d63343c2a26226324272765272\
-                 a282b2f20430a652e2c652a3124333a653e2b2027630c692b20283165286326302e27282f"
-            ),
-        )
+        let input = (
+            "ICE",
+            "Burning 'em, if you ain't quick and nimble\nI go crazy when I hear a cymbal",
+        );
+
+        let original = repeating_xor_encrypt(input.0, input.1).unwrap();
+        let expected = String::from(
+            "0b3637272a2b2e63622c2e69692a23693a2a3c6324202d623d63343c2a2622632427276527\
+            2a282b2f20430a652e2c652a3124333a653e2b2027630c692b20283165286326302e27282f",
+        );
+
+        assert_eq!(original, expected);
     }
 
     #[test]
     fn test_challenge6_solution() {
-        assert_eq!(
-            break_repeating_xor(include_str!("data/set1_challenge6_input.txt")).unwrap(),
-            include_str!("data/set1_challenge6_expected_output.txt"),
-        )
+        let input = include_str!("data/set1/challenge/6/input.txt");
+
+        let original = break_repeating_xor(input).unwrap();
+        let expected = include_str!("data/set1/challenge/6/expected_output.txt");
+
+        assert_eq!(original, expected);
     }
 }
