@@ -9,3 +9,6 @@
 # Rust compiler generated files
 /target
 **/*.rs.bk
+
+# Cargo generated files
+Cargo.lock
